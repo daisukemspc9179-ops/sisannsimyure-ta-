@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資産シミュレーター</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2230;
+    --border: #30363d;
+    --accent: #3fb950;
+    --accent2: #58a6ff;
+    --cash: #a78bfa;
+    --warn: #f85149;
+    --gold: #e3b341;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #484f58;
+    --radius: 12px;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+  header { text-align: center; margin-bottom: 32px; padding-top: 12px; }
+  header .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #1a3a2a, #0d2d1a);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 11px; font-weight: 500; letter-spacing: 2px;
+    padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: clamp(22px, 5vw, 32px); font-weight: 700; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  header p { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:600px) { .two-col { grid-template-columns: 1fr; } }
+  .section-box {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+  }
+  .section-box.invest-box { border-color: rgba(63,185,80,0.35); }
+  .section-box.cash-box   { border-color: rgba(167,139,250,0.35); }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .section-label.green { color: var(--accent); }
+  .section-label.purple { color: var(--cash); }
+  .section-label .tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+  .section-label.green .tag  { background: rgba(63,185,80,0.15); color: var(--accent); }
+  .section-label.purple .tag { background: rgba(167,139,250,0.15); color: var(--cash); }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; letter-spacing: 0.5px; }
+  .field input, .field select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--font-mono); font-size: 14px;
+    padding: 9px 11px; transition: border-color 0.2s; -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent2); }
+  .field .unit { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+  .results-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px;
+  }
+  .result-box {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px; text-align: center;
+  }
+  .result-box.hl-green  { border-color: var(--accent);  background: linear-gradient(135deg,#0d1f14,#111d17); }
+  .result-box.hl-purple { border-color: var(--cash);    background: linear-gradient(135deg,#160e2a,#110e1f); }
+  .result-box.hl-total  { border-color: var(--gold);    background: linear-gradient(135deg,#1f1a0d,#181408); }
+  .result-box .label { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+  .result-box .value { font-family: var(--font-mono); font-size: clamp(16px,3.5vw,22px); font-weight: 500; color: var(--text); }
+  .result-box.hl-green .value  { color: var(--accent); }
+  .result-box.hl-purple .value { color: var(--cash); }
+  .result-box.hl-total .value  { color: var(--gold); }
+  .result-box .sub { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+  .chart-wrap { position: relative; height: 230px; margin-bottom: 8px; }
+  canvas#chart { width: 100% !important; height: 100% !important; }
+  .events-list { display: flex; flex-direction: column; gap: 10px; }
+  .event-row {
+    display: grid;
+    grid-template-columns: 70px 145px 105px 105px 1fr auto;
+    gap: 7px; align-items: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+  .event-row input, .event-row select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 7px 9px; width: 100%;
+  }
+  .event-row input:focus, .event-row select:focus { outline: none; border-color: var(--accent2); }
+  .btn-delete {
+    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 6px; padding: 7px 10px; cursor: pointer; font-size: 13px;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-delete:hover { border-color: var(--warn); color: var(--warn); }
+  .btn-add {
+    display: flex; align-items: center; gap: 6px; background: none;
+    border: 1px dashed var(--border); color: var(--text-muted); border-radius: 8px;
+    padding: 10px 16px; cursor: pointer; font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif; width: 100%; justify-content: center;
+    transition: all 0.2s; margin-top: 4px;
+  }
+  .btn-add:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-calc {
+    width: 100%; background: linear-gradient(135deg, #1a4d2e, #0d3320);
+    border: 1px solid var(--accent); color: var(--accent); border-radius: var(--radius);
+    padding: 14px; font-size: 15px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 1px; cursor: pointer; transition: all 0.2s; margin-bottom: 20px;
+  }
+  .btn-calc:hover { background: linear-gradient(135deg,#1f6136,#124028); box-shadow: 0 0 20px rgba(63,185,80,0.25); }
+  .btn-calc:active { transform: scale(0.99); }
+  .table-wrap {
+    overflow-x: auto; max-height: 340px; overflow-y: auto;
+    border-radius: 8px; border: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: var(--font-mono); }
+  thead th {
+    background: var(--surface2); padding: 9px 12px; text-align: right;
+    color: var(--text-muted); font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    position: sticky; top: 0; border-bottom: 1px solid var(--border);
+  }
+  thead th:first-child { text-align: left; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 7px 12px; text-align: right; color: var(--text-muted); }
+  tbody td:first-child { text-align: left; color: var(--text); }
+  tbody td.ev  { color: var(--gold); }
+  tbody td.pos { color: var(--accent); }
+  tbody td.neg { color: var(--warn); }
+  tbody td.csh { color: var(--cash); }
+  .legend {
+    display: flex; gap: 14px; justify-content: center;
+    font-size: 11px; color: var(--text-muted); margin-top: 8px; flex-wrap: wrap;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 2px; }
+  @media(max-width:600px) {
+    .event-row { grid-template-columns: 1fr 1fr; }
+    .event-row > *:nth-child(n+5) { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">ASSET SIMULATOR</div>
+    <h1>資産シミュレーター</h1>
+    <p>インデックス投資 ＋ 現金貯蓄　ライフイベントの引き出し元も選べる</p>
+  </header>
+
+  <!-- 基本設定 -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>基本設定</div>
+    <div class="two-col">
+      <div class="section-box invest-box">
+        <div class="section-label green">📈 インデックス投資 <span class="tag">運用あり</span></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>毎月の積み立て額</label>
+            <input type="number" id="monthly" value="30000" min="0" step="1000">
+            <div class="unit">円 / 月</div>
+          </div>
+          <div class="field">
+            <label>初期投資額（一括）</label>
+            <input type="number" id="initial" value="0" min="0" step="10000">
+            <div class="unit">円</div>
+          </div>
+          <div class="field">
+            <label>想定年利（税引前）</label>
+            <input type="number" id="rate" value="5" min="0" max="30" step="0.1">
+            <div class="unit">% / 年</div>
+          </div>
+          <div class="field">
+            <label>税金</label>
+            <select id="taxMode">
+              <option value="nisa">NISA（非課税）</option>
+              <option value="taxable">課税口座（20.315%）</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="section-box cash-box">
+        <div class="section-label purple">💴 現金貯蓄 <span class="tag">利息あり</span></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>毎月の貯蓄額</label>
+            <input type="number" id="cashMonthly" value="10000" min="0" step="1000">
+            <div class="unit">円 / 月</div>
+          </div>
+          <div class="field">
+            <label>初期現金（手元）</label>
+            <input type="number" id="cashInitial" value="0" min="0" step="10000">
+            <div class="unit">円</div>
+          </div>
+          <div class="field">
+            <label>年利息（普通預金等）</label>
+            <input type="number" id="cashRate" value="0.1" min="0" max="10" step="0.01">
+            <div class="unit">% / 年</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="field" style="max-width:200px">
+        <label>積み立て期間</label>
+        <input type="number" id="years" value="20" min="1" max="50" step="1">
+        <div class="unit">年</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ライフイベント -->
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--gold)"></span>ライフイベント（引き出し・追加）</div>
+    <div class="events-list" id="eventsList"></div>
+    <button class="btn-add" onclick="addEvent()">＋ イベントを追加</button>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">📊 シミュレーション実行</button>
+
+  <!-- 結果 -->
+  <div id="resultsSection" style="display:none">
+    <div class="results-grid" id="summaryBoxes"></div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>資産推移グラフ</div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <div class="legend">
+        <span><span class="dot" style="background:#3fb950"></span>投資残高</span>
+        <span><span class="dot" style="background:#a78bfa"></span>現金残高</span>
+        <span><span class="dot" style="background:rgba(88,166,255,0.5)"></span>投資元本</span>
+        <span><span class="dot" style="background:#e3b341"></span>イベント</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--text-muted)"></span>年別推移テーブル</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>年</th>
+              <th>投資残高</th>
+              <th>運用益</th>
+              <th>現金残高</th>
+              <th>引き出し</th>
+              <th>合計資産</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+let chartData = null;
+let lastEvents = [];
+
+function fmt(n) {
+  const abs = Math.abs(n);
+  if (abs >= 1e8) return (n/1e8).toFixed(2)+'億円';
+  if (abs >= 1e4) return Math.round(n/1e4)+'万円';
+  return Math.round(n).toLocaleString()+'円';
+}
+
+function addEvent(yr='', amt='', desc='', type='withdraw', src='both') {
+  const list = document.getElementById('eventsList');
+  const row = document.createElement('div');
+  row.className = 'event-row';
+
+  const typeOpts = [
+    ['withdraw','💸 引き出し'],
+    ['add_invest','📈 投資へ追加'],
+    ['add_cash','💴 現金へ追加'],
+    ['stop','⏸ 積み立て停止'],
+    ['resume','▶ 積み立て再開']
+  ].map(([v,l])=>`<option value="${v}"${type===v?' selected':''}>${l}</option>`).join('');
+
+  const srcOpts = [
+    ['both','両方（投資→現金の順）'],
+    ['invest','投資から引き出し'],
+    ['cash','現金から引き出し']
+  ].map(([v,l])=>`<option value="${v}"${src===v?' selected':''}>${l}</option>`).join('');
+
+  row.innerHTML = `
+    <input type="number" placeholder="何年目" min="1" max="60" value="${yr}">
+    <select class="type-sel">${typeOpts}</select>
+    <input type="number" placeholder="金額（円）" value="${amt}" min="0" step="10000" class="amt-inp">
+    <select class="src-sel" style="${type!=='withdraw'?'display:none':''}">${srcOpts}</select>
+    <input type="text" placeholder="内容メモ（例：住宅購入）" value="${desc}" class="desc-field">
+    <button class="btn-delete" onclick="this.closest('.event-row').remove()">削除</button>
+  `;
+
+  row.querySelector('.type-sel').addEventListener('change', function() {
+    const isWith = this.value === 'withdraw';
+    row.querySelector('.src-sel').style.display  = isWith ? '' : 'none';
+    row.querySelector('.amt-inp').style.display  =
+      (this.value === 'stop' || this.value === 'resume') ? 'none' : '';
+  });
+
+  list.appendChild(row);
+}
+
+addEvent(5,  500000,  '旅行・車など',    'withdraw', 'cash');
+addEvent(15, 3000000, '住宅リフォーム',  'withdraw', 'both');
+
+function calculate() {
+  const monthly    = parseFloat(document.getElementById('monthly').value)    || 0;
+  const initial    = parseFloat(document.getElementById('initial').value)    || 0;
+  const annualRate = parseFloat(document.getElementById('rate').value)       / 100;
+  const taxMode    = document.getElementById('taxMode').value;
+  const taxRate    = taxMode === 'taxable' ? 0.20315 : 0;
+  const cashMon    = parseFloat(document.getElementById('cashMonthly').value)|| 0;
+  const cashInit   = parseFloat(document.getElementById('cashInitial').value)|| 0;
+  const cashRate   = parseFloat(document.getElementById('cashRate').value)   / 100;
+  const years      = parseInt(document.getElementById('years').value)        || 20;
+
+  const rows = document.querySelectorAll('.event-row');
+  const events = [];
+  rows.forEach(row => {
+    const yrInp  = row.querySelector('input[type=number]');
+    const amtInp = row.querySelector('.amt-inp');
+    const typeSel = row.querySelector('.type-sel');
+    const srcSel  = row.querySelector('.src-sel');
+    const descInp = row.querySelector('.desc-field');
+    const yr  = parseInt(yrInp.value);
+    const amt = parseFloat(amtInp ? amtInp.value : 0) || 0;
+    const desc = descInp ? descInp.value : '';
+    const type = typeSel.value;
+    const src  = (srcSel && srcSel.style.display !== 'none') ? srcSel.value : 'both';
+    if (yr >= 1) events.push({ yr, amt, desc, type, src });
+  });
+  events.sort((a,b)=>a.yr-b.yr);
+  lastEvents = events;
+
+  const mRate  = annualRate / 12;
+  const cmRate = cashRate   / 12;
+
+  let invest = initial, investContrib = initial;
+  let cash = cashInit;
+  let totalWithdrawn = 0;
+  let stopped = false;
+
+  const yearlyData = [];
+
+  for (let y = 1; y <= years; y++) {
+    let yearWithdraw = 0, yearDesc = '';
+
+    events.filter(e=>e.yr===y).forEach(e=>{
+      if (e.type === 'withdraw') {
+        let remaining = e.amt;
+        if (e.src === 'invest' || e.src === 'both') {
+          const w = Math.min(remaining, Math.max(invest, 0));
+          if (w > 0) {
+            const gain = invest - investContrib;
+            const tax  = (gain > 0) ? (w/invest)*gain*taxRate : 0;
+            invest -= w + tax;
+            investContrib = Math.max(investContrib - w*(investContrib/Math.max(invest+w,1)), 0);
+            remaining -= w; yearWithdraw += w; totalWithdrawn += w;
+          }
+        }
+        if ((e.src === 'cash' || e.src === 'both') && remaining > 0) {
+          const w = Math.min(remaining, Math.max(cash, 0));
+          cash -= w; remaining -= w; yearWithdraw += w; totalWithdrawn += w;
+        }
+        yearDesc += (yearDesc?' / ':'') + (e.desc||'引き出し') + '【'+srcLabel(e.src)+'】';
+      } else if (e.type === 'add_invest') {
+        invest += e.amt; investContrib += e.amt;
+        yearDesc += (yearDesc?' / ':'') + (e.desc||'投資追加');
+      } else if (e.type === 'add_cash') {
+        cash += e.amt;
+        yearDesc += (yearDesc?' / ':'') + (e.desc||'現金追加');
+      } else if (e.type === 'stop') {
+        stopped = true;
+        yearDesc += (yearDesc?' / ':'') + '積み立て停止';
+      } else if (e.type === 'resume') {
+        stopped = false;
+        yearDesc += (yearDesc?' / ':'') + '積み立て再開';
+      }
+    });
+
+    for (let m = 0; m < 12; m++) {
+      invest = invest * (1 + mRate);
+      cash   = cash   * (1 + cmRate);
+      if (!stopped) {
+        invest += monthly; investContrib += monthly;
+        cash   += cashMon;
+      }
+    }
+
+    const investGain = invest - investContrib;
+    yearlyData.push({
+      year: y,
+      invest: Math.max(invest, 0), investContrib,
+      investGain,
+      cash: Math.max(cash, 0),
+      total: Math.max(invest,0) + Math.max(cash,0),
+      withdraw: yearWithdraw, desc: yearDesc
+    });
+  }
+
+  const last = yearlyData[yearlyData.length-1];
+  document.getElementById('summaryBoxes').innerHTML = `
+    <div class="result-box hl-total">
+      <div class="label">合計資産</div>
+      <div class="value">${fmt(last.total)}</div>
+      <div class="sub">${years}年後</div>
+    </div>
+    <div class="result-box hl-green">
+      <div class="label">投資残高</div>
+      <div class="value">${fmt(last.invest)}</div>
+      <div class="sub">運用益 ${fmt(last.investGain)}</div>
+    </div>
+    <div class="result-box hl-purple">
+      <div class="label">現金残高</div>
+      <div class="value">${fmt(last.cash)}</div>
+      <div class="sub">貯蓄のみ</div>
+    </div>
+    <div class="result-box">
+      <div class="label">引き出し総額</div>
+      <div class="value" style="color:var(--gold)">${fmt(totalWithdrawn)}</div>
+      <div class="sub">ライフイベント計</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  yearlyData.forEach(d=>{
+    const gc = d.investGain >= 0 ? 'pos' : 'neg';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${d.year}年目${d.desc?` <span style="color:var(--gold);font-size:9px">◆${d.desc}</span>`:''}</td>
+      <td class="pos">${fmt(d.invest)}</td>
+      <td class="${gc}">${fmt(d.investGain)}</td>
+      <td class="csh">${fmt(d.cash)}</td>
+      <td class="${d.withdraw>0?'ev':''}">${d.withdraw>0?fmt(d.withdraw):'—'}</td>
+      <td style="color:var(--gold);font-weight:500">${fmt(d.total)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('resultsSection').scrollIntoView({behavior:'smooth',block:'start'});
+  chartData = yearlyData;
+  drawChart(yearlyData, events);
+}
+
+function srcLabel(s) {
+  return s==='invest'?'投資':s==='cash'?'現金':'両方';
+}
+
+function drawChart(data, events) {
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width * dpr;
+  canvas.height = 230 * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = 230;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = {t:16, r:16, b:32, l:66};
+  const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+  const maxVal = Math.max(...data.map(d=>d.total)) * 1.1 || 1;
+  const n = data.length;
+  const xP = i => pad.l + (i/(n-1))*cW;
+  const yP = v => pad.t + cH - (v/maxVal)*cH;
+
+  // Grid
+  ctx.lineWidth = 0.5; ctx.strokeStyle = '#30363d';
+  for (let i=0; i<=4; i++) {
+    const y = pad.t + (i/4)*cH;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle='#484f58'; ctx.font='10px DM Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText(fmt(maxVal*(1-i/4)), pad.l-6, y+4);
+  }
+
+  // Cash area
+  ctx.beginPath(); ctx.moveTo(xP(0), yP(0));
+  data.forEach((d,i) => ctx.lineTo(xP(i), yP(d.cash)));
+  ctx.lineTo(xP(n-1), yP(0)); ctx.closePath();
+  ctx.fillStyle = 'rgba(167,139,250,0.1)'; ctx.fill();
+
+  // Invest area
+  ctx.beginPath(); ctx.moveTo(xP(0), yP(data[0].invest));
+  data.forEach((d,i) => ctx.lineTo(xP(i), yP(d.invest)));
+  ctx.lineTo(xP(n-1), yP(0)); ctx.lineTo(xP(0), yP(0)); ctx.closePath();
+  const g = ctx.createLinearGradient(0,pad.t,0,H);
+  g.addColorStop(0,'rgba(63,185,80,0.28)'); g.addColorStop(1,'rgba(63,185,80,0.02)');
+  ctx.fillStyle=g; ctx.fill();
+
+  // Contrib dashed
+  ctx.beginPath(); ctx.strokeStyle='rgba(88,166,255,0.45)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  data.forEach((d,i) => i===0?ctx.moveTo(xP(i),yP(d.investContrib)):ctx.lineTo(xP(i),yP(d.investContrib)));
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Cash line
+  ctx.beginPath(); ctx.strokeStyle='#a78bfa'; ctx.lineWidth=1.8;
+  data.forEach((d,i) => i===0?ctx.moveTo(xP(i),yP(d.cash)):ctx.lineTo(xP(i),yP(d.cash)));
+  ctx.stroke();
+
+  // Invest line
+  ctx.beginPath(); ctx.strokeStyle='#3fb950'; ctx.lineWidth=2;
+  data.forEach((d,i) => i===0?ctx.moveTo(xP(i),yP(d.invest)):ctx.lineTo(xP(i),yP(d.invest)));
+  ctx.stroke();
+
+  // Event markers
+  events.filter(e=>e.type==='withdraw'||e.type==='add_invest'||e.type==='add_cash').forEach(e=>{
+    if(e.yr>=1 && e.yr<=data.length){
+      const d=data[e.yr-1], x=xP(e.yr-1), y=yP(d.total);
+      ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2);
+      ctx.fillStyle='#e3b341'; ctx.fill();
+    }
+  });
+
+  // X labels
+  ctx.fillStyle='#484f58'; ctx.font='10px DM Mono,monospace'; ctx.textAlign='center';
+  const step = Math.ceil(n/8);
+  data.forEach((d,i)=>{ if(i%step===0||i===n-1) ctx.fillText(d.year+'年', xP(i), H-4); });
+}
+
+window.addEventListener('resize', ()=>{ if(chartData) drawChart(chartData, lastEvents); });
+</script>
+</body>
+</html>
