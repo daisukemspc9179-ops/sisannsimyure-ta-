@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>満足度家計簿 | お金の使い方を学ぼう</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700;900&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    --bg: #0f0e1a;
+    --surface: #1a1828;
+    --surface2: #221f35;
+    --good: #2dd4a0;
+    --good-dim: rgba(45,212,160,0.12);
+    --bad: #ff6b7a;
+    --bad-dim: rgba(255,107,122,0.12);
+    --accent: #f7c948;
+    --text: #e8e4f0;
+    --muted: #7a748f;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+    background-image:
+      radial-gradient(ellipse at 10% 10%, rgba(45,212,160,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(255,107,122,0.06) 0%, transparent 50%);
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 6vw, 32px);
+    background: linear-gradient(135deg, var(--good), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.02em;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  .month-badge {
+    display: inline-block;
+    margin-top: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 600px) {
+    .columns { grid-template-columns: 1fr; }
+  }
+
+  .section-card {
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+
+  .section-label.good { color: var(--good); }
+  .section-label.bad  { color: var(--bad); }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot.good { background: var(--good); box-shadow: 0 0 6px var(--good); }
+  .dot.bad  { background: var(--bad);  box-shadow: 0 0 6px var(--bad); }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: var(--surface2);
+    transition: background 0.15s;
+  }
+
+  .item-num {
+    font-size: 11px;
+    color: var(--muted);
+    width: 16px;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  .item-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    placeholder-color: var(--muted);
+  }
+
+  .item-input::placeholder { color: var(--muted); }
+
+  .amount-input {
+    width: 80px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--border);
+    outline: none;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    padding-left: 8px;
+    text-align: right;
+  }
+
+  .month-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .month-label {
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .month-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 14px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .analyze-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--good), #1aab7a);
+    border: none;
+    border-radius: 14px;
+    color: #0f0e1a;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(45,212,160,0.25);
+  }
+
+  .analyze-btn:active { transform: scale(0.98); }
+  .analyze-btn:disabled {
+    background: var(--surface2);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* ─── Result Area ─── */
+  .result-area {
+    display: none;
+  }
+
+  .result-area.visible { display: block; }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .result-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+
+  .result-month-tag {
+    font-size: 11px;
+    background: var(--good-dim);
+    color: var(--good);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .advice-card {
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .advice-card.good {
+    background: var(--good-dim);
+    border-color: rgba(45,212,160,0.2);
+  }
+
+  .advice-card.bad {
+    background: var(--bad-dim);
+    border-color: rgba(255,107,122,0.2);
+  }
+
+  .advice-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+  }
+
+  .advice-card.good::before { color: var(--good); background: linear-gradient(90deg, transparent, var(--good), transparent); }
+  .advice-card.bad::before  { color: var(--bad);  background: linear-gradient(90deg, transparent, var(--bad),  transparent); }
+
+  .advice-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+
+  .advice-tag.good { background: rgba(45,212,160,0.2); color: var(--good); }
+  .advice-tag.bad  { background: rgba(255,107,122,0.2); color: var(--bad); }
+
+  .advice-pattern {
+    font-size: 16px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .advice-body {
+    font-size: 14px;
+    color: rgba(232,228,240,0.8);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .example-list {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .example-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .example-item {
+    font-size: 13px;
+    color: var(--text);
+    padding: 4px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+
+  .example-item::before {
+    content: '→';
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .loading-overlay {
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--surface2);
+    border-top-color: var(--good);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .history-section {
+    margin-top: 32px;
+  }
+
+  .history-title {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .history-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .history-item:hover { border-color: rgba(255,255,255,0.15); }
+
+  .history-month { font-size: 14px; font-weight: 700; }
+  .history-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .history-arrow { color: var(--muted); font-size: 16px; }
+
+  .clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: color 0.15s;
+    margin-top: 8px;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .clear-btn:hover { color: var(--bad); border-color: var(--bad); }
+
+  .trend-section {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    display: none;
+  }
+
+  .trend-section.visible { display: block; }
+
+  .trend-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .trend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .trend-item:last-child { border-bottom: none; }
+
+  .trend-rank {
+    font-size: 11px;
+    color: var(--muted);
+    width: 20px;
+    font-weight: 700;
+  }
+
+  .trend-pattern { font-size: 13px; flex: 1; line-height: 1.4; }
+  .trend-count {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  .trend-count.good { background: var(--good-dim); color: var(--good); }
+  .trend-count.bad  { background: var(--bad-dim);  color: var(--bad); }
+
+  .error-msg {
+    background: rgba(255,107,122,0.1);
+    border: 1px solid rgba(255,107,122,0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--bad);
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">満足度家計簿</div>
+  <div class="subtitle">支出の「満足パターン」を学んで、お金の使い方を育てよう</div>
+  <div class="month-badge">✦ AI ADVISOR ✦</div>
+</div>
+
+<!-- Month selector -->
+<div class="month-row">
+  <span class="month-label">記録する月</span>
+  <select class="month-select" id="monthSelect">
+    <option value="2026年1月">2026年1月</option>
+    <option value="2026年2月">2026年2月</option>
+    <option value="2026年3月">2026年3月</option>
+    <option value="2026年4月" selected>2026年4月</option>
+    <option value="2026年5月">2026年5月</option>
+    <option value="2026年6月">2026年6月</option>
+    <option value="2025年12月">2025年12月</option>
+    <option value="2025年11月">2025年11月</option>
+    <option value="2025年10月">2025年10月</option>
+    <option value="2025年9月">2025年9月</option>
+  </select>
+</div>
+
+<!-- Input columns -->
+<div class="columns">
+  <!-- Good -->
+  <div class="section-card">
+    <div class="section-label good">
+      <span class="dot good"></span>
+      満足度が高かった支出
+    </div>
+    <div id="goodItems"></div>
+  </div>
+  <!-- Bad -->
+  <div class="section-card">
+    <div class="section-label bad">
+      <span class="dot bad"></span>
+      満足度が低かった支出
+    </div>
+    <div id="badItems"></div>
+  </div>
+</div>
+
+<div class="error-msg" id="errorMsg"></div>
+
+<button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+  ✦ このお金の使い方を分析する
+</button>
+
+<!-- Result -->
+<div class="result-area" id="resultArea">
+  <div class="result-header">
+    <div class="result-title">📊 分析レポート</div>
+    <div class="result-month-tag" id="resultMonthTag"></div>
+  </div>
+  <div id="resultContent"></div>
+</div>
+
+<!-- Trend -->
+<div class="trend-section" id="trendSection">
+  <div class="trend-title">📈 あなたの傾向まとめ（これまでの記録より）</div>
+  <div id="trendGood" style="margin-bottom:16px"></div>
+  <div id="trendBad"></div>
+</div>
+
+<!-- History -->
+<div class="history-section" id="historySection" style="display:none">
+  <div class="history-title">過去の記録</div>
+  <div id="historyList"></div>
+  <button class="clear-btn" onclick="clearHistory()">🗑 全履歴を削除</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'manzoku_kakeibo_v1';
+
+function buildItems(containerId, type) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    el.innerHTML += `
+      <div class="item-row">
+        <span class="item-num">${i}</span>
+        <input class="item-input" type="text" id="${type}Name${i}"
+          placeholder="${type === 'good' ? '例）スーパー銭湯' : '例）コンビニのコーヒー'}">
+        <input class="amount-input" type="text" id="${type}Amount${i}" placeholder="金額">
+      </div>`;
+  }
+}
+
+buildItems('goodItems', 'good');
+buildItems('badItems', 'bad');
+
+function getInputs() {
+  const good = [], bad = [];
+  for (let i = 1; i <= 5; i++) {
+    const gn = document.getElementById(`goodName${i}`).value.trim();
+    const ga = document.getElementById(`goodAmount${i}`).value.trim();
+    const bn = document.getElementById(`badName${i}`).value.trim();
+    const ba = document.getElementById(`badAmount${i}`).value.trim();
+    if (gn) good.push({ name: gn, amount: ga });
+    if (bn) bad.push({ name: bn, amount: ba });
+  }
+  return { good, bad };
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveToHistory(month, good, bad, result) {
+  const history = loadHistory();
+  const existing = history.findIndex(h => h.month === month);
+  const entry = { month, good, bad, result, date: new Date().toISOString() };
+  if (existing >= 0) history[existing] = entry;
+  else history.unshift(entry);
+  if (history.length > 24) history.pop();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  const section = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  if (history.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = history.map(h => `
+    <div class="history-item" onclick="loadHistoryEntry('${h.month}')">
+      <div>
+        <div class="history-month">${h.month}</div>
+        <div class="history-meta">✅ ${h.good.length}件 / ❌ ${h.bad.length}件</div>
+      </div>
+      <div class="history-arrow">›</div>
+    </div>`).join('');
+}
+
+function loadHistoryEntry(month) {
+  const history = loadHistory();
+  const entry = history.find(h => h.month === month);
+  if (!entry) return;
+  document.getElementById('monthSelect').value = month;
+  for (let i = 0; i < 5; i++) {
+    document.getElementById(`goodName${i+1}`).value = entry.good[i]?.name || '';
+    document.getElementById(`goodAmount${i+1}`).value = entry.good[i]?.amount || '';
+    document.getElementById(`badName${i+1}`).value = entry.bad[i]?.name || '';
+    document.getElementById(`badAmount${i+1}`).value = entry.bad[i]?.amount || '';
+  }
+  showResult(entry.result, month);
+  renderTrend();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function clearHistory() {
+  if (!confirm('全履歴を削除しますか？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  renderHistory();
+  document.getElementById('trendSection').classList.remove('visible');
+}
+
+function showResult(data, month) {
+  const area = document.getElementById('resultArea');
+  const content = document.getElementById('resultContent');
+  const tag = document.getElementById('resultMonthTag');
+  tag.textContent = month;
+  area.classList.add('visible');
+  content.innerHTML = '';
+
+  (data.good_patterns || []).forEach(p => {
+    content.innerHTML += `
+      <div class="advice-card good">
+        <div class="advice-tag good">✦ こんなことに使うといいよ！</div>
+        <div class="advice-pattern">🌿 ${p.pattern}</div>
+        <div class="advice-body">${p.reason}</div>
+        <div class="example-list">
+          <div class="example-label">似た支出の例</div>
+          ${(p.examples || []).map(e => `<div class="example-item">${e}</div>`).join('')}
+        </div>
+      </div>`;
+  });
+
+  (data.bad_patterns || []).forEach(p => {
+    content.innerHTML += `
+      <div class="advice-card bad">
+        <div class="advice-tag bad">⚠️ こんなことには気をつけてね</div>
+        <div class="advice-pattern">🔴 ${p.pattern}</div>
+        <div class="advice-body">${p.reason}</div>
+        <div class="example-list">
+          <div class="example-label">似た支出の例</div>
+          ${(p.examples || []).map(e => `<div class="example-item">${e}</div>`).join('')}
+        </div>
+      </div>`;
+  });
+
+  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderTrend() {
+  const history = loadHistory();
+  if (history.length < 2) return;
+
+  const goodMap = {}, badMap = {};
+  history.forEach(h => {
+    (h.result?.good_patterns || []).forEach(p => {
+      goodMap[p.pattern] = (goodMap[p.pattern] || 0) + 1;
+    });
+    (h.result?.bad_patterns || []).forEach(p => {
+      badMap[p.pattern] = (badMap[p.pattern] || 0) + 1;
+    });
+  });
+
+  const sortedGood = Object.entries(goodMap).sort((a,b) => b[1]-a[1]).slice(0,3);
+  const sortedBad  = Object.entries(badMap).sort((a,b) => b[1]-a[1]).slice(0,3);
+
+  const trendSection = document.getElementById('trendSection');
+  trendSection.classList.add('visible');
+
+  const render = (entries, type, containerId) => {
+    const el = document.getElementById(containerId);
+    el.innerHTML = `<div style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-bottom:8px">
+      ${type === 'good' ? '✅ あなたの得意な使い方' : '⚠️ 繰り返しがちなパターン'}
+    </div>` + entries.map(([p, c], i) => `
+      <div class="trend-item">
+        <span class="trend-rank">${i+1}</span>
+        <span class="trend-pattern">${p}</span>
+        <span class="trend-count ${type}">${c}ヶ月</span>
+      </div>`).join('');
+  };
+
+  if (sortedGood.length) render(sortedGood, 'good', 'trendGood');
+  if (sortedBad.length)  render(sortedBad,  'bad',  'trendBad');
+}
+
+async function analyze() {
+  const { good, bad } = getInputs();
+  const month = document.getElementById('monthSelect').value;
+  const errEl = document.getElementById('errorMsg');
+  errEl.classList.remove('visible');
+
+  if (good.length === 0 && bad.length === 0) {
+    errEl.textContent = '少なくとも1件入力してください';
+    errEl.classList.add('visible');
+    return;
+  }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = '分析中...';
+
+  const resultArea = document.getElementById('resultArea');
+  resultArea.classList.remove('visible');
+  resultArea.innerHTML = `<div class="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">AIがあなたの支出パターンを読み解いています...</div>
+  </div>`;
+  resultArea.classList.add('visible');
+
+  const prompt = `あなたは家計アドバイザーです。ユーザーが${month}に使ったお金の満足度を報告します。
+以下のデータを分析して、抽象的なパターンとアドバイスをJSON形式で返してください。
+
+【満足度が高かった支出】
+${good.length > 0 ? good.map((g,i) => `${i+1}. ${g.name}${g.amount ? `（${g.amount}円）` : ''}`).join('\n') : '（入力なし）'}
+
+【満足度が低かった支出】
+${bad.length > 0 ? bad.map((b,i) => `${i+1}. ${b.name}${b.amount ? `（${b.amount}円）` : ''}`).join('\n') : '（入力なし）'}
+
+以下のJSON形式のみで返してください（余計な説明文・\`\`\`マークは一切不要）:
+{
+  "good_patterns": [
+    {
+      "pattern": "パターン名（例：体験・リフレッシュへの投資）",
+      "reason": "なぜこの使い方が満足度が高いのかの説明（2〜3文、フレンドリーな口調で）",
+      "examples": ["似た支出例1", "似た支出例2", "似た支出例3"]
+    }
+  ],
+  "bad_patterns": [
+    {
+      "pattern": "パターン名（例：習慣的・惰性の消費）",
+      "reason": "なぜこの使い方が満足度が低くなりがちかの説明（2〜3文、優しく注意）",
+      "examples": ["似た支出例1", "似た支出例2", "似た支出例3"]
+    }
+  ]
+}
+
+重要なルール:
+・満足度が高かった支出が「入力なし」の場合、good_patternsは必ず空配列 [] にすること
+・満足度が低かった支出が「入力なし」の場合、bad_patternsは必ず空配列 [] にすること
+・データがある方だけパターンを最大2つ生成する
+・パターンは抽象化し、具体的な商品名は使わない
+・日本語で、親しみやすいカジュアルな口調で`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content?.map(c => c.text || '').join('') || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    saveToHistory(month, good, bad, parsed);
+    showResult(parsed, month);
+    renderHistory();
+    renderTrend();
+
+  } catch (e) {
+    resultArea.innerHTML = '';
+    resultArea.classList.remove('visible');
+    errEl.textContent = '分析に失敗しました。もう一度お試しください。';
+    errEl.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ このお金の使い方を分析する';
+  }
+}
+
+// init
+renderHistory();
+renderTrend();
+</script>
+</body>
+</html>
