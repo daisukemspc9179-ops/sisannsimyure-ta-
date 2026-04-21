@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>目的別口座管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F4F0;
+  --surface: #FFFFFF;
+  --surface2: #F0EEE8;
+  --border: rgba(0,0,0,0.08);
+  --text: #1A1A18;
+  --text2: #6B6B66;
+  --text3: #A0A09A;
+  --blue: #185FA5;
+  --blue-bg: #E6F1FB;
+  --amber: #BA7517;
+  --amber-bg: #FAEEDA;
+  --red: #A32D2D;
+  --red-bg: #FCEBEB;
+  --green: #0F6E56;
+  --green-bg: #E1F5EE;
+  --accent: #1A1A18;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.app-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.header-total { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.header-sub { font-size: 11px; color: var(--text3); }
+
+/* ── TAB BAR ── */
+.tab-bar {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 50;
+  padding-bottom: var(--safe-bottom);
+}
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-size: 10px;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  gap: 3px;
+  transition: color .2s;
+}
+.tab-btn.active { color: var(--accent); }
+.tab-btn svg { width: 22px; height: 22px; }
+
+/* ── SCROLL AREA ── */
+.scroll-area {
+  padding: 16px 16px calc(80px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── SUMMARY CHIPS ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.chip {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+}
+.chip-label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+.chip-value { font-size: 16px; font-weight: 700; }
+
+/* ── LEGEND ── */
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text2);
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── KOZA CARD ── */
+.koza-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.koza-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.koza-card-left { display: flex; flex-direction: column; gap: 4px; }
+.koza-name-row { display: flex; align-items: center; gap: 8px; }
+.koza-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.koza-name { font-size: 15px; font-weight: 700; }
+.koza-type-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 500;
+}
+.koza-balance { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+.koza-actions { display: flex; gap: 6px; }
+.btn-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text2);
+}
+.btn-icon:active { opacity: 0.6; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { margin-top: 4px; }
+.bar-track {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+.bar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bar-goal { font-size: 11px; color: var(--text3); }
+.bar-pct { font-size: 13px; font-weight: 700; }
+.pct-blue { color: var(--blue); }
+.pct-amber { color: var(--amber); }
+.pct-red { color: var(--red); }
+.no-goal-label { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ── ADD KOZA BTN ── */
+.btn-add-koza {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text3);
+  font-size: 14px;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+}
+.btn-add-koza:active { background: var(--surface2); }
+
+/* ── RECORD FORM ── */
+.form-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 12px 16px 0;
+}
+.form-fields { padding: 10px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.field-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+.seg-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+.seg-btn {
+  padding: 9px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text3);
+  transition: all .15s;
+}
+.seg-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.seg-btn.active.in { color: var(--green); }
+.seg-btn.active.out { color: var(--red); }
+
+.native-select {
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text);
+  padding: 0 14px;
+  font-size: 15px;
+  font-family: 'Noto Sans JP', sans-serif;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A0A09A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.native-input {
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text);
+  padding: 0 14px;
+  font-size: 15px;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.native-input::placeholder { color: var(--text3); }
+.native-input:focus, .native-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.amount-wrap { position: relative; }
+.amount-prefix {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--text2);
+  pointer-events: none;
+}
+.amount-input {
+  padding-left: 26px !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+}
+
+.btn-record {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: opacity .15s;
+}
+.btn-record:active { opacity: 0.75; }
+
+/* ── HISTORY ── */
+.filter-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.filter-strip::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--text2);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.hist-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.hist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.hist-tags { display: flex; align-items: center; gap: 5px; }
+.hist-koza-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface2);
+}
+.hist-cat-tag {
+  font-size: 10px;
+  color: var(--text3);
+}
+.inout-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.badge-in { background: var(--green-bg); color: var(--green); }
+.badge-out { background: var(--red-bg); color: var(--red); }
+.hist-memo { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-date { font-size: 10px; color: var(--text3); }
+.hist-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.hist-amount { font-size: 16px; font-weight: 700; }
+.hist-amount.plus { color: var(--green); }
+.hist-amount.minus { color: var(--red); }
+.btn-del-tx {
+  font-size: 10px;
+  color: var(--text3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-size: 14px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px 20px calc(24px + var(--safe-bottom));
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.modal-handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  margin: 0 auto 16px;
+}
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+.modal-field { margin-bottom: 14px; }
+.modal-label { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 5px; }
+.color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-opt {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+.color-opt.selected { border-color: var(--text); }
+.modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.modal-btn {
+  height: 46px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+}
+.modal-btn.cancel { background: var(--surface2); border: none; color: var(--text2); }
+.modal-btn.ok { background: var(--accent); border: none; color: #fff; }
+.modal-btn:active { opacity: 0.7; }
+
+/* tab content */
+.tab-page { display: none; }
+.tab-page.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-header-top">
+    <div class="app-title">目的別口座</div>
+    <div>
+      <div class="header-total" id="hdr-total">¥0</div>
+      <div class="header-sub">合計残高</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div id="page-koza" class="tab-page active">
+  <div class="scroll-area">
+    <div class="summary-row" id="summary-grid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>100%以上</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>31〜99%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>30%以下</div>
+    </div>
+    <div id="koza-list"></div>
+    <button class="btn-add-koza" onclick="openAddKoza()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      口座を追加
+    </button>
+  </div>
+</div>
+
+<div id="page-record" class="tab-page">
+  <div class="scroll-area">
+    <div class="form-section">
+      <div class="form-section-title">入出金を記録</div>
+      <div class="form-fields">
+        <div>
+          <div class="field-label">種類</div>
+          <div class="seg-control">
+            <button class="seg-btn active in" id="seg-in" onclick="setType('in')">入金</button>
+            <button class="seg-btn out" id="seg-out" onclick="setType('out')">出金</button>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">口座</div>
+          <select class="native-select" id="sel-koza"></select>
+        </div>
+        <div>
+          <div class="field-label">カテゴリ</div>
+          <select class="native-select" id="sel-cat"></select>
+        </div>
+        <div>
+          <div class="field-label">金額</div>
+          <div class="amount-wrap">
+            <span class="amount-prefix">¥</span>
+            <input class="native-input amount-input" type="number" id="inp-amount" placeholder="0" min="1" inputmode="numeric">
+          </div>
+        </div>
+        <div>
+          <div class="field-label">メモ（任意）</div>
+          <input class="native-input" type="text" id="inp-memo" placeholder="例：6月分生活費">
+        </div>
+        <button class="btn-record" onclick="addTx()">記録する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-history" class="tab-page">
+  <div class="scroll-area">
+    <div class="filter-strip">
+      <select class="filter-chip" id="flt-koza" onchange="renderHistory()">
+        <option value="">すべての口座</option>
+      </select>
+      <select class="filter-chip" id="flt-type" onchange="renderHistory()">
+        <option value="">入出金すべて</option>
+        <option value="in">入金のみ</option>
+        <option value="out">出金のみ</option>
+      </select>
+      <select class="filter-chip" id="flt-cat" onchange="renderHistory()">
+        <option value="">カテゴリすべて</option>
+      </select>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tb-koza" onclick="gotoTab('koza')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    口座
+  </button>
+  <button class="tab-btn" id="tb-record" onclick="gotoTab('record')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    記録
+  </button>
+  <button class="tab-btn" id="tb-history" onclick="gotoTab('history')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    履歴
+  </button>
+</nav>
+
+<div id="modal-area"></div>
+
+<script>
+const COLORS=['#378ADD','#1D9E75','#D85A30','#D4537E','#7F77DD','#BA7517','#639922','#888780'];
+const TYPE_TAGS={
+  生活費:{color:'#185FA5',bg:'#E6F1FB'},
+  生活防衛費:{color:'#0F6E56',bg:'#E1F5EE'},
+  特別費:{color:'#993C1D',bg:'#FAECE7'},
+  投資用資金:{color:'#534AB7',bg:'#EEEDFE'},
+  旅行積立:{color:'#854F0B',bg:'#FAEEDA'},
+  緊急用:{color:'#BA7517',bg:'#FAEEDA'},
+  その他:{color:'#5F5E5A',bg:'#F1EFE8'},
+};
+const IN_CATS=['給与','ボーナス','副業収入','配当・利息','その他収入'];
+const OUT_CATS=['生活費','食費','住宅ローン','住宅関係','光熱費','通信費','車関係','学費','保険','娯楽費','旅行','外食','医療費','投資','その他支出'];
+
+let accounts=[
+  {id:1,name:'生活費',color:'#378ADD',goal:0,balance:0,type:'生活費'},
+  {id:2,name:'生活防衛費',color:'#1D9E75',goal:600000,balance:0,type:'生活防衛費'},
+  {id:3,name:'特別費',color:'#D85A30',goal:300000,balance:0,type:'特別費'},
+  {id:4,name:'投資用資金',color:'#7F77DD',goal:0,balance:0,type:'投資用資金'},
+  {id:5,name:'旅行積立',color:'#BA7517',goal:100000,balance:0,type:'旅行積立'},
+];
+let history=[];
+let nextId=20;
+let curType='in';
+let curTab='koza';
+
+function fmt(n){return '¥'+Math.round(n).toLocaleString('ja-JP');}
+function fmtDate(d){return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+
+function pctColor(pct){
+  if(pct>=100) return {bar:'#185FA5',cls:'pct-blue'};
+  if(pct>=31)  return {bar:'#BA7517',cls:'pct-amber'};
+  return {bar:'#A32D2D',cls:'pct-red'};
+}
+
+function gotoTab(t){
+  curTab=t;
+  ['koza','record','history'].forEach(n=>{
+    document.getElementById('page-'+n).classList.toggle('active',n===t);
+    document.getElementById('tb-'+n).classList.toggle('active',n===t);
+  });
+  if(t==='record') renderTxForm();
+  if(t==='history'){renderHistoryFilters();renderHistory();}
+}
+
+function setType(t){
+  curType=t;
+  document.getElementById('seg-in').classList.toggle('active',t==='in');
+  document.getElementById('seg-out').classList.toggle('active',t==='out');
+  updateCatOptions();
+}
+
+function updateCatOptions(){
+  const cats=curType==='in'?IN_CATS:OUT_CATS;
+  document.getElementById('sel-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+}
+
+function render(){
+  renderSummary();
+  renderKoza();
+  if(curTab==='record') renderTxForm();
+}
+
+function renderSummary(){
+  const total=accounts.reduce((s,a)=>s+a.balance,0);
+  const goals=accounts.filter(a=>a.goal>0).reduce((s,a)=>s+a.goal,0);
+  document.getElementById('hdr-total').textContent=fmt(total);
+  document.getElementById('summary-grid').innerHTML=`
+    <div class="chip"><div class="chip-label">口座数</div><div class="chip-value">${accounts.length}口座</div></div>
+    <div class="chip"><div class="chip-label">目標合計</div><div class="chip-value">${goals>0?fmt(goals):'未設定'}</div></div>
+    <div class="chip"><div class="chip-label">取引件数</div><div class="chip-value">${history.length}件</div></div>
+    <div class="chip"><div class="chip-label">今月の記録</div><div class="chip-value">${history.filter(h=>{const n=new Date();return h.date.getMonth()===n.getMonth()&&h.date.getFullYear()===n.getFullYear();}).length}件</div></div>
+  `;
+}
+
+function renderKoza(){
+  const el=document.getElementById('koza-list');
+  el.innerHTML=accounts.map(a=>{
+    const tag=TYPE_TAGS[a.type]||TYPE_TAGS['その他'];
+    let prog='';
+    if(a.goal>0){
+      const pct=Math.round(a.balance/a.goal*100);
+      const disp=Math.min(pct,100);
+      const col=pctColor(pct);
+      prog=`<div class="progress-wrap">
+        <div class="bar-track"><div class="bar-fill" style="width:${disp}%;background:${col.bar}"></div></div>
+        <div class="bar-meta">
+          <span class="bar-goal">目標 ${fmt(a.goal)}</span>
+          <span class="bar-pct ${col.cls}">${pct}%</span>
+        </div>
+      </div>`;
+    } else {
+      prog=`<div class="no-goal-label">目標未設定</div>`;
+    }
+    return `<div class="koza-card" style="margin-bottom:8px;">
+      <div class="koza-card-header">
+        <div class="koza-card-left">
+          <div class="koza-name-row">
+            <div class="koza-dot" style="background:${a.color}"></div>
+            <div class="koza-name">${a.name}</div>
+            <span class="koza-type-tag" style="background:${tag.bg};color:${tag.color}">${a.type}</span>
+          </div>
+          <div class="koza-balance">${fmt(a.balance)}</div>
+        </div>
+        <div class="koza-actions">
+          <button class="btn-icon" onclick="openEdit(${a.id})">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          ${accounts.length>1?`<button class="btn-icon" onclick="delKoza(${a.id})">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#A32D2D" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>`:''} 
+        </div>
+      </div>
+      ${prog}
+    </div>`;
+  }).join('');
+}
+
+function renderTxForm(){
+  const sel=document.getElementById('sel-koza');
+  const cur=sel.value;
+  sel.innerHTML=accounts.map(a=>`<option value="${a.id}" ${a.id==cur?'selected':''}>${a.name}</option>`).join('');
+  updateCatOptions();
+}
+
+function renderHistoryFilters(){
+  document.getElementById('flt-koza').innerHTML='<option value="">すべての口座</option>'+accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  const allCats=[...new Set([...IN_CATS,...OUT_CATS])].sort();
+  document.getElementById('flt-cat').innerHTML='<option value="">カテゴリすべて</option>'+allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function renderHistory(){
+  const fKoza=document.getElementById('flt-koza')?.value||'';
+  const fType=document.getElementById('flt-type')?.value||'';
+  const fCat=document.getElementById('flt-cat')?.value||'';
+  let items=[...history].reverse();
+  if(fKoza) items=items.filter(h=>h.kozaId==fKoza);
+  if(fType) items=items.filter(h=>h.type===fType);
+  if(fCat)  items=items.filter(h=>h.cat===fCat);
+  const el=document.getElementById('history-list');
+  if(!items.length){
+    el.innerHTML='<div class="empty-state">履歴がありません<br>入出金を記録してみましょう</div>';
+    return;
+  }
+  el.innerHTML=`<div class="hist-card">`+items.map(h=>{
+    const a=accounts.find(x=>x.id===h.kozaId);
+    const name=a?a.name:'削除済み';
+    const col=a?a.color:'#888';
+    return `<div class="hist-item">
+      <div class="hist-left">
+        <div class="hist-tags">
+          <span class="hist-koza-tag" style="color:${col}">${name}</span>
+          <span class="hist-cat-tag">${h.cat}</span>
+          <span class="inout-badge ${h.type==='in'?'badge-in':'badge-out'}">${h.type==='in'?'入金':'出金'}</span>
+        </div>
+        <div class="hist-memo">${h.memo||'—'}</div>
+        <div class="hist-date">${fmtDate(h.date)}</div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-amount ${h.type==='in'?'plus':'minus'}">${h.type==='in'?'+':'−'}${fmt(h.amount)}</div>
+        <button class="btn-del-tx" onclick="delTx(${h.id})">削除</button>
+      </div>
+    </div>`;
+  }).join('')+`</div>`;
+}
+
+function addTx(){
+  const kozaId=parseInt(document.getElementById('sel-koza').value);
+  const cat=document.getElementById('sel-cat').value;
+  const amount=parseInt(document.getElementById('inp-amount').value);
+  const memo=document.getElementById('inp-memo').value;
+  if(!amount||amount<=0){alert('金額を入力してください');return;}
+  const a=accounts.find(x=>x.id===kozaId);
+  if(!a)return;
+  a.balance+=curType==='in'?amount:-amount;
+  history.push({id:nextId++,kozaId,type:curType,cat,amount,memo,date:new Date()});
+  document.getElementById('inp-amount').value='';
+  document.getElementById('inp-memo').value='';
+  render();
+  // 口座タブへ移動して確認できる
+  gotoTab('koza');
+}
+
+function delTx(id){
+  if(!confirm('この履歴を削除しますか？'))return;
+  history=history.filter(h=>h.id!==id);
+  renderHistory();renderSummary();
+}
+
+function delKoza(id){
+  if(!confirm('この口座を削除しますか？'))return;
+  accounts=accounts.filter(a=>a.id!==id);
+  render();
+}
+
+const KOZA_TYPES=Object.keys(TYPE_TAGS);
+
+function openAddKoza(){showModal(null);}
+function openEdit(id){showModal(accounts.find(a=>a.id===id));}
+
+function showModal(data){
+  const isEdit=!!data;
+  const d=data||{name:'',color:COLORS[0],goal:0,type:'その他'};
+  document.getElementById('modal-area').innerHTML=`
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-title">${isEdit?'口座を編集':'口座を追加'}</div>
+        <div class="modal-field">
+          <div class="modal-label">口座名</div>
+          <input class="native-input" type="text" id="m-name" value="${d.name}" placeholder="例：車購入積立">
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">種別</div>
+          <select class="native-select" id="m-type">${KOZA_TYPES.map(t=>`<option value="${t}" ${t===d.type?'selected':''}>${t}</option>`).join('')}</select>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">目標金額（0=なし）</div>
+          <div class="amount-wrap">
+            <span class="amount-prefix">¥</span>
+            <input class="native-input amount-input" type="number" id="m-goal" value="${d.goal}" min="0" inputmode="numeric">
+          </div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-label">カラー</div>
+          <div class="color-picker">${COLORS.map(c=>`<div class="color-opt ${c===d.color?'selected':''}" style="background:${c}" data-c="${c}" onclick="pickColor(this)"></div>`).join('')}</div>
+        </div>
+        <div class="modal-btns">
+          <button class="modal-btn cancel" onclick="document.getElementById('modal-area').innerHTML=''">キャンセル</button>
+          <button class="modal-btn ok" onclick="saveModal(${isEdit},${d.id||0})">${isEdit?'保存':'追加'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function pickColor(el){
+  document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function closeModal(e){document.getElementById('modal-area').innerHTML='';}
+
+function saveModal(isEdit,id){
+  const name=document.getElementById('m-name').value.trim();
+  const type=document.getElementById('m-type').value;
+  const goal=parseInt(document.getElementById('m-goal').value)||0;
+  const colorEl=document.querySelector('.color-opt.selected');
+  const color=colorEl?colorEl.dataset.c:COLORS[0];
+  if(!name){alert('口座名を入力してください');return;}
+  if(isEdit){
+    const a=accounts.find(x=>x.id===id);
+    if(a){a.name=name;a.type=type;a.goal=goal;a.color=color;}
+  }else{
+    accounts.push({id:nextId++,name,color,goal,type,balance:0});
+  }
+  document.getElementById('modal-area').innerHTML='';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
